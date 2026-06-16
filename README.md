@@ -91,21 +91,3 @@ Two equal-width cards (col-6 each).
 ```
 
 ---
-
-## Running Locally
-
-No server needed. Open `index.html` directly in a browser.
-
-```bash
-open index.html
-```
-
-Chart.js is loaded from CDN, so an internet connection is required on first load. To run fully offline, download `chart.umd.min.js` and update the script src to a local path.
-
----
-
-## Customisation
-
-All data is hardcoded as JavaScript arrays in the `<script>` block at the bottom of `index.html`. To swap in real data, replace the array values or fetch from an API and call `chart.update()` after updating `chart.data.datasets[0].data`.
-
-Design tokens live in the `:root` block in `<style>` — changing `--accent` will propagate the color through all charts, pills, and active states.
