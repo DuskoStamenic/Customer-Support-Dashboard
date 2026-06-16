@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Support Dashboard — Overview</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f5;
+    --card: #ffffff;
+    --border: #e5e5e5;
+    --text: #1a1a1a;
+    --muted: #888888;
+    --accent: #7856ff;
+    --accent-light: #f0ecff;
+    --up: #16a34a;
+    --up-bg: #dcfce7;
+    --down: #dc2626;
+    --down-bg: #fee2e2;
+    --grid: rgba(0,0,0,0.05);
+    --radius: 10px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: var(--font);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── Top Bar ─────────────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    height: 52px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+  }
+
+  .topbar-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .topbar-title svg {
+    color: var(--accent);
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--muted);
+    transition: border-color 0.15s;
+  }
+  .topbar-icon-btn:hover { border-color: #bbb; color: var(--text); }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── Layout ──────────────────────────────────────────── */
+  .layout {
+    display: flex;
+    flex: 1;
+  }
+
+  /* ─── Sidebar ─────────────────────────────────────────── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 12px 16px 4px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    text-decoration: none;
+  }
+  .sidebar-item:hover { background: var(--bg); color: var(--text); }
+  .sidebar-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .sidebar-item svg { flex-shrink: 0; }
+
+  .sidebar-new-conv {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 12px 12px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    background: var(--card);
+    transition: border-color 0.15s;
+  }
+  .sidebar-new-conv:hover { border-color: var(--accent); }
+
+  /* ─── Main Content — 12-col grid ─────────────────────── */
+  .main {
+    flex: 1;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: auto;
+    gap: 16px;
+    align-content: start;
+    min-width: 0;
+  }
+
+  /* ─── KPI Row ─────────────────────────────────────────── */
+  .kpi-row {
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--card);
+  }
+
+  .kpi-card {
+    padding: 18px 20px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .kpi-card:last-child { border-right: none; }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .kpi-delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: fit-content;
+  }
+  .kpi-delta.up { color: var(--up); background: var(--up-bg); }
+  .kpi-delta.down { color: var(--down); background: var(--down-bg); }
+
+  .kpi-compare {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 4px;
+    font-weight: 400;
+  }
+
+  /* ─── Card column spans ───────────────────────────────── */
+  .col-8  { grid-column: span 8; }
+  .col-6  { grid-column: span 6; }
+  .col-4  { grid-column: span 4; }
+  .col-3  { grid-column: span 3; }
+
+  /* ─── Chart Cards ─────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .badge-delta {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--up);
+    background: var(--up-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .badge-delta.down { color: var(--down); background: var(--down-bg); }
+
+  /* Time range selector */
+  .time-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    background: var(--card);
+    transition: border-color 0.15s;
+    white-space: nowrap;
+  }
+  .time-selector:hover { border-color: #bbb; }
+
+  .chart-wrap {
+    position: relative;
+    height: 220px;
+  }
+
+  /* Donut legend */
+  .donut-legend {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── Bottom Row ──────────────────────────────────────── */
+  .bot-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ─── Sparkline KPI cards ─────────────────────────────── */
+  .spark-card {
+    grid-column: span 3;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .spark-label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .spark-value {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .spark-chart {
+    height: 44px;
+    margin-top: 8px;
+  }
+
+  /* ─── Activity Feed ───────────────────────────────────── */
+  .feed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 4px;
+  }
+  .feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+  .feed-dot.grey { background: var(--muted); }
+  .feed-dot.green { background: var(--up); }
+  .feed-text { color: var(--text); line-height: 1.4; }
+  .feed-time { margin-left: auto; color: var(--muted); white-space: nowrap; font-size: 11px; }
+
+  /* ─── Table ───────────────────────────────────────────── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+  .data-table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg); }
+
+  .status-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .status-pill.open { background: #fef3c7; color: #92400e; }
+  .status-pill.resolved { background: var(--up-bg); color: var(--up); }
+  .status-pill.pending { background: #ede9fe; color: #6d28d9; }
+
+  /* ─── Breakpoints ─────────────────────────────────────── */
+
+  /* ≤1100px — sidebar stays, grid goes 8-col */
+  @media (max-width: 1100px) {
+    .main {
+      grid-template-columns: repeat(8, 1fr);
+    }
+    .kpi-row        { grid-column: span 8; grid-template-columns: repeat(2, 1fr); }
+    .kpi-card:nth-child(2) { border-right: none; }
+    .kpi-card:nth-child(3) { border-top: 1px solid var(--border); }
+    .kpi-card:nth-child(4) { border-top: 1px solid var(--border); }
+    .col-8          { grid-column: span 8; }
+    .col-6          { grid-column: span 4; }
+    .col-4          { grid-column: span 4; }
+    .col-3          { grid-column: span 4; }
+    .spark-card     { grid-column: span 4; }
+  }
+
+  /* ≤768px — sidebar collapses, single content column */
+  @media (max-width: 768px) {
+    .sidebar        { display: none; }
+    .main {
+      grid-template-columns: repeat(4, 1fr);
+      padding: 12px;
+      gap: 12px;
+    }
+    .kpi-row        { grid-column: span 4; grid-template-columns: repeat(2, 1fr); }
+    .kpi-card:nth-child(2) { border-right: none; }
+    .kpi-card:nth-child(3) { border-top: 1px solid var(--border); border-right: 1px solid var(--border); }
+    .kpi-card:nth-child(4) { border-top: 1px solid var(--border); }
+    .col-8          { grid-column: span 4; }
+    .col-6          { grid-column: span 4; }
+    .col-4          { grid-column: span 4; }
+    .col-3          { grid-column: span 2; }
+    .spark-card     { grid-column: span 2; }
+  }
+
+  /* ≤480px — everything full width */
+  @media (max-width: 480px) {
+    .main           { grid-template-columns: 1fr; }
+    .kpi-row        { grid-column: span 1; grid-template-columns: 1fr 1fr; }
+    .col-8, .col-6, .col-4, .col-3 { grid-column: span 1; }
+    .spark-card     { grid-column: span 1; }
+    .kpi-value      { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7856ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+  <div class="topbar-divider"></div>
+  <div class="topbar-title">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    Overview
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-icon-btn" title="Send">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+    <button class="topbar-icon-btn" title="Notifications">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <div class="avatar">DS</div>
+  </div>
+</header>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <button class="sidebar-new-conv">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Conversation
+    </button>
+
+    <div class="sidebar-section-label">Today</div>
+    <a class="sidebar-item active" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Overview
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Queue
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><bar-chart-2/><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Team insights
+    </a>
+
+    <div class="sidebar-section-label">Inbox</div>
+    <a class="sidebar-item" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Conversations
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customers
+    </a>
+    <a class="sidebar-item" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h7"/></svg>
+      Channels
+    </a>
+
+    <div class="sidebar-section-label">Organization</div>
+    <a class="sidebar-item" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Workspace
+    </a>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Open queue</div>
+        <div class="kpi-value">38</div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="kpi-delta down">↓ 12.4%</span>
+          <span class="kpi-compare">vs yesterday</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active conversations</div>
+        <div class="kpi-value">126</div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="kpi-delta up">↑ 5.2%</span>
+          <span class="kpi-compare">vs last week</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Median first reply</div>
+        <div class="kpi-value">4.1m</div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="kpi-delta down">↓ 8.0%</span>
+          <span class="kpi-compare">vs last week</span>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">CSAT (30d)</div>
+        <div class="kpi-value">94%</div>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <span class="kpi-delta up">↑ 1.1%</span>
+          <span class="kpi-compare">vs prior 30d</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversation Volume -->
+    <div class="card col-8">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            Conversation volume
+            <span class="badge-delta">↑ 2.4%</span>
+          </div>
+        </div>
+        <button class="time-selector">
+          Last 30 days
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+      <div class="card-subtitle">New threads per day for the selected window.</div>
+      <div class="chart-wrap">
+        <canvas id="volumeChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Traffic by Channel -->
+    <div class="card col-4">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            Traffic by channel
+            <span class="badge-delta">↑ 2.4pp</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-subtitle">Share of new conversations in last 7 days.</div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="donutChart"></canvas>
+      </div>
+      <div class="donut-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#7856ff"></div>Direct</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c4b5fd"></div>Email</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e5e0ff"></div>Social</div>
+      </div>
+    </div>
+
+    <!-- CSAT Responses -->
+    <div class="card col-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title">CSAT responses</div>
+        </div>
+      </div>
+      <div class="card-subtitle">Post-resolution surveys submitted per day by channel, last 10 days.</div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="csatChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Median First Reply -->
+    <div class="card col-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title">
+            Median first reply
+            <span class="badge-delta">↑ 24.1%</span>
+          </div>
+        </div>
+      </div>
+      <div class="card-subtitle">Minutes to first agent message, last 7 days.</div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="replyChart"></canvas>
+      </div>
+    </div>
+
+    <!-- SPARKLINES -->
+    <div class="spark-card">
+      <div class="spark-label">Resolved today</div>
+      <div class="spark-value">84</div>
+      <div class="spark-chart"><canvas id="spark1"></canvas></div>
+    </div>
+    <div class="spark-card">
+      <div class="spark-label">Avg handle time</div>
+      <div class="spark-value">8.3m</div>
+      <div class="spark-chart"><canvas id="spark2"></canvas></div>
+    </div>
+    <div class="spark-card">
+      <div class="spark-label">Reopened tickets</div>
+      <div class="spark-value">12</div>
+      <div class="spark-chart"><canvas id="spark3"></canvas></div>
+    </div>
+    <div class="spark-card">
+      <div class="spark-label">Escalations</div>
+      <div class="spark-value">5</div>
+      <div class="spark-chart"><canvas id="spark4"></canvas></div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="card col-6">
+      <div class="card-header" style="margin-bottom:8px;">
+        <div class="card-title">Recent activity</div>
+      </div>
+        <div class="feed-list">
+          <div class="feed-item">
+            <div class="feed-dot"></div>
+            <div class="feed-text">Conversation <strong>#4821</strong> assigned to Maria K. — billing issue escalated</div>
+            <div class="feed-time">2m ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot green"></div>
+            <div class="feed-text">Conversation <strong>#4819</strong> resolved by John D. — CSAT submitted ★★★★★</div>
+            <div class="feed-time">6m ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot grey"></div>
+            <div class="feed-text">SLA breached on <strong>#4815</strong> — first reply exceeded 10m threshold</div>
+            <div class="feed-time">14m ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot"></div>
+            <div class="feed-text">New conversation <strong>#4820</strong> opened via Email — plan upgrade query</div>
+            <div class="feed-time">18m ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-dot green"></div>
+            <div class="feed-text">Conversation <strong>#4817</strong> resolved — onboarding question, 3.2m handle time</div>
+            <div class="feed-time">31m ago</div>
+          </div>
+      </div>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="card col-6">
+      <div class="card-header" style="margin-bottom:8px;">
+        <div class="card-title">Open tickets</div>
+      </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Wait</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>#4821</td>
+              <td>Acme Corp</td>
+              <td>Billing discrepancy</td>
+              <td><span class="status-pill open">Open</span></td>
+              <td>2m</td>
+            </tr>
+            <tr>
+              <td>#4818</td>
+              <td>Nova Labs</td>
+              <td>API rate limits</td>
+              <td><span class="status-pill pending">Pending</span></td>
+              <td>22m</td>
+            </tr>
+            <tr>
+              <td>#4814</td>
+              <td>Orbit Inc</td>
+              <td>SSO configuration</td>
+              <td><span class="status-pill open">Open</span></td>
+              <td>47m</td>
+            </tr>
+            <tr>
+              <td>#4811</td>
+              <td>Flux Digital</td>
+              <td>Export not working</td>
+              <td><span class="status-pill pending">Pending</span></td>
+              <td>1h 12m</td>
+            </tr>
+            <tr>
+              <td>#4807</td>
+              <td>Stark Systems</td>
+              <td>Onboarding help</td>
+              <td><span class="status-pill resolved">Resolved</span></td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── Shared defaults ──────────────────────────────────────
+const GRID = 'rgba(0,0,0,0.05)';
+const ACCENT = '#7856ff';
+const TEXT = '#888888';
+
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = TEXT;
+
+const tooltipDefaults = {
+  backgroundColor: '#fff',
+  borderColor: '#e5e5e5',
+  borderWidth: 1,
+  titleColor: '#1a1a1a',
+  bodyColor: '#555',
+  padding: 10,
+  cornerRadius: 6,
+  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+};
+
+// ── Volume Chart (area) ──────────────────────────────────
+const volLabels = ['Apr 19','Apr 22','Apr 25','Apr 28','May 1','May 4','May 7','May 10','May 13','May 16','May 19'];
+const volData = [58,72,65,80,95,88,105,112,98,120,135];
+
+const volCtx = document.getElementById('volumeChart');
+const volGrad = volCtx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+volGrad.addColorStop(0, 'rgba(120,86,255,0.18)');
+volGrad.addColorStop(1, 'rgba(120,86,255,0)');
+
+new Chart(volCtx, {
+  type: 'line',
+  data: {
+    labels: volLabels,
+    datasets: [{
+      data: volData,
+      borderColor: ACCENT,
+      borderWidth: 2,
+      backgroundColor: volGrad,
+      fill: true,
+      tension: 0.4,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      pointHoverBackgroundColor: ACCENT,
+      pointHoverBorderColor: '#fff',
+      pointHoverBorderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tooltipDefaults, callbacks: { label: ctx => ` ${ctx.parsed.y} threads` } } },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { maxTicksLimit: 7 }, border: { display: false } },
+      y: { grid: { color: GRID }, border: { display: false }, ticks: { stepSize: 35 } }
+    }
+  }
+});
+
+// ── Donut Chart ──────────────────────────────────────────
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Direct', 'Email', 'Social'],
+    datasets: [{
+      data: [44, 36, 20],
+      backgroundColor: ['#7856ff', '#c4b5fd', '#e5e0ff'],
+      borderWidth: 0,
+      hoverOffset: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { ...tooltipDefaults, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` } }
+    }
+  }
+});
+
+// ── CSAT Bar Chart ───────────────────────────────────────
+const csatLabels = ['Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3','May 4','May 5'];
+new Chart(document.getElementById('csatChart'), {
+  type: 'bar',
+  data: {
+    labels: csatLabels,
+    datasets: [
+      { label: 'Direct', data: [18,22,15,28,20,24,19,30,22,26], backgroundColor: '#7856ff', borderRadius: 3, barPercentage: 0.6 },
+      { label: 'Email',  data: [12,14,18,10,16,20,14,18,15,20], backgroundColor: '#c4b5fd', borderRadius: 3, barPercentage: 0.6 },
+      { label: 'Social', data: [6,8,5,9,7,8,6,10,8,9],          backgroundColor: '#e5e0ff', borderRadius: 3, barPercentage: 0.6 },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, padding: 14, usePointStyle: true, pointStyle: 'circle' } }, tooltip: tooltipDefaults },
+    scales: {
+      x: { stacked: true, grid: { display: false }, border: { display: false } },
+      y: { stacked: true, grid: { color: GRID }, border: { display: false } }
+    }
+  }
+});
+
+// ── Reply Time Line Chart ────────────────────────────────
+const replyData = [5.4, 4.9, 5.2, 4.7, 4.5, 5.0, 4.1];
+const replyLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+new Chart(document.getElementById('replyChart'), {
+  type: 'line',
+  data: {
+    labels: replyLabels,
+    datasets: [{
+      data: replyData,
+      borderColor: ACCENT,
+      borderWidth: 2,
+      tension: 0.35,
+      pointRadius: 4,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: ACCENT,
+      pointBorderWidth: 2,
+      pointHoverRadius: 5,
+      fill: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { ...tooltipDefaults, callbacks: { label: ctx => ` ${ctx.parsed.y}m` } } },
+    scales: {
+      x: { grid: { display: false }, border: { display: false } },
+      y: { grid: { color: GRID }, border: { display: false }, ticks: { callback: v => v + 'm' }, min: 3.5, max: 6 }
+    }
+  }
+});
+
+// ── Sparklines ───────────────────────────────────────────
+function makeSparkline(id, data, color) {
+  new Chart(document.getElementById(id), {
+    type: 'line',
+    data: {
+      labels: data.map((_, i) => i),
+      datasets: [{
+        data,
+        borderColor: color || ACCENT,
+        borderWidth: 1.5,
+        tension: 0.4,
+        pointRadius: 0,
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      },
+      animation: false,
+    }
+  });
+}
+
+makeSparkline('spark1', [60,72,68,80,75,84,84], ACCENT);
+makeSparkline('spark2', [9.1,8.8,9.4,8.5,8.0,8.3,8.3], '#16a34a');
+makeSparkline('spark3', [8,15,11,14,12,10,12], '#dc2626');
+makeSparkline('spark4', [3,6,5,8,4,6,5], '#f59e0b');
+</script>
+</body>
+</html>
